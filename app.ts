@@ -5,7 +5,7 @@ const url = 'https://suchen.mobile.de/fahrzeuge/search.html?damageUnrepaired=NO_
 
 async function check() {
     try {
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
         await page.goto(url);
@@ -51,8 +51,6 @@ async function check() {
 };
 
 console.log('Crawler started.');
-
-// check();
 
 setInterval(() => {
     check();
