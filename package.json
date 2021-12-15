@@ -2,9 +2,11 @@
   "name": "mobile-crawler",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node .",
     "dev": "tsc --watch"
   },
   "author": "",
