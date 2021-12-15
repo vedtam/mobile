@@ -7,10 +7,7 @@ async function check() {
     try {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
-        
-        // set user agent (override the default headless User Agent)
         await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
-
         await page.goto(url);
         const hrefElement = await page.$('.mde-consent-accept-btn');
         await hrefElement?.click();
@@ -18,14 +15,18 @@ async function check() {
         let prices = [];
         
         for (const ad of adds) {
-            const price = await ad?.$eval('.price-block span:first-child', (e) => e.textContent);
+            const price = await ad?.$eval('.price-block span:first-child', (e: any) => e.textContent);
             prices.push(parseFloat(price || '0'));
         }
 
         const sorted = prices.sort((a, b) => a - b);
-        console.log(sorted);
 
-        if (sorted[0] < 30) {
+        const date = new Date().toLocaleString('ro-RO', {timeZone: 'Europe/Bucharest'});
+        console.log(`Last checked: ${date}`)
+
+        if (sorted[0] < 22) {
+            console.log('Offer bellow 22.000 found!');
+
             new Email().send({
                 from: '"Mobile crawler" <vedtam@gmail.com>',
                 to: 'vedtam@gmail.com',
@@ -49,6 +50,10 @@ async function check() {
     }
 };
 
+console.log('Crawler started.');
+
+// check();
+
 setInterval(() => {
     check();
-}, 60000 * 45);
+}, 60000 * 30);
