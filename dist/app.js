@@ -56,7 +56,7 @@ async function check() {
 async function createPage(browser, url) {
     //Randomize User agent or Set a valid one
     const userAgent = random_useragent_1.default.getRandom();
-    const UA = userAgent || USER_AGENT;
+    const UA = USER_AGENT;
     const page = await browser.newPage();
     //Randomize viewport size
     await page.setViewport({
