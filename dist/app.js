@@ -6,12 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer_extra_1 = __importDefault(require("puppeteer-extra"));
 const puppeteer_extra_plugin_stealth_1 = __importDefault(require("puppeteer-extra-plugin-stealth"));
 const emailer_js_1 = __importDefault(require("./emailer.js"));
+const random_useragent_1 = __importDefault(require("random-useragent"));
 puppeteer_extra_1.default.use((0, puppeteer_extra_plugin_stealth_1.default)());
 const url = 'https://suchen.mobile.de/fahrzeuge/search.html?damageUnrepaired=NO_DAMAGE_UNREPAIRED&isSearchRequest=true&makeModelVariant1.makeId=1900&makeModelVariant1.modelId=15&minFirstRegistrationDate=2016-01-01&scopeId=C&sfmr=false&sortOption.sortBy=searchNetGrossPrice&sortOption.sortOrder=ASCENDING';
+const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36';
 async function check() {
     try {
         const browser = await puppeteer_extra_1.default.launch({ headless: true, args: ['--no-sandbox'] });
-        const page = await browser.newPage();
+        // const page = await browser.newPage();
+        const page = await createPage(browser, url);
         // await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
         await page.goto(url);
         const hrefElement = await page.$('.mde-consent-accept-btn');
@@ -42,7 +45,7 @@ async function check() {
                 `
             });
         }
-        // await page.screenshot({ path: 'example.png' });
+        await page.screenshot({ path: 'example.png' });
         await browser.close();
     }
     catch (e) {
@@ -50,6 +53,70 @@ async function check() {
     }
 }
 ;
+async function createPage(browser, url) {
+    //Randomize User agent or Set a valid one
+    const userAgent = random_useragent_1.default.getRandom();
+    const UA = userAgent || USER_AGENT;
+    const page = await browser.newPage();
+    //Randomize viewport size
+    await page.setViewport({
+        width: 1920 + Math.floor(Math.random() * 100),
+        height: 3000 + Math.floor(Math.random() * 100),
+        deviceScaleFactor: 1,
+        hasTouch: false,
+        isLandscape: false,
+        isMobile: false,
+    });
+    await page.setUserAgent(UA);
+    await page.setJavaScriptEnabled(true);
+    await page.setDefaultNavigationTimeout(0);
+    //Skip images/styles/fonts loading for performance
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+        if (req.resourceType() == 'stylesheet' || req.resourceType() == 'font' || req.resourceType() == 'image') {
+            req.abort();
+        }
+        else {
+            req.continue();
+        }
+    });
+    await page.evaluateOnNewDocument(() => {
+        // Pass webdriver check
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => false,
+        });
+    });
+    await page.evaluateOnNewDocument(() => {
+        // Pass chrome check
+        //@ts-ignore
+        window.chrome = {
+            runtime: {},
+            // etc.
+        };
+    });
+    await page.evaluateOnNewDocument(() => {
+        //Pass notifications check
+        const originalQuery = window.navigator.permissions.query;
+        //@ts-ignore
+        return window.navigator.permissions.query = (parameters) => (parameters.name === 'notifications' ? Promise.resolve({ state: Notification.permission }) : originalQuery(parameters));
+    });
+    await page.evaluateOnNewDocument(() => {
+        // Overwrite the `plugins` property to use a custom getter.
+        Object.defineProperty(navigator, 'plugins', {
+            // This just needs to have `length > 0` for the current test,
+            // but we could mock the plugins too if necessary.
+            get: () => [1, 2, 3, 4, 5],
+        });
+    });
+    await page.evaluateOnNewDocument(() => {
+        // Overwrite the `languages` property to use a custom getter.
+        Object.defineProperty(navigator, 'languages', {
+            get: () => ['en-US', 'en'],
+        });
+    });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 0 });
+    return page;
+}
 console.log('Crawler started.');
 check();
 setInterval(() => {
