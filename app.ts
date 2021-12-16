@@ -1,5 +1,8 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import Email from './emailer.js';
+
+puppeteer.use(StealthPlugin());
 
 const url = 'https://suchen.mobile.de/fahrzeuge/search.html?damageUnrepaired=NO_DAMAGE_UNREPAIRED&isSearchRequest=true&makeModelVariant1.makeId=1900&makeModelVariant1.modelId=15&minFirstRegistrationDate=2016-01-01&scopeId=C&sfmr=false&sortOption.sortBy=searchNetGrossPrice&sortOption.sortOrder=ASCENDING';
 
@@ -7,7 +10,7 @@ async function check() {
     try {
         const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+        // await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
         await page.goto(url);
         const hrefElement = await page.$('.mde-consent-accept-btn');
         await hrefElement?.click();
@@ -24,7 +27,7 @@ async function check() {
         const date = new Date().toLocaleString('ro-RO', {timeZone: 'Europe/Bucharest'});
         console.log(`Last checked: ${date}`)
 
-        if (sorted[0] < 22) {
+        if (sorted[0] < 30) {
             console.log('Offer bellow 22.000 found!');
 
             new Email().send({
@@ -51,6 +54,8 @@ async function check() {
 };
 
 console.log('Crawler started.');
+
+check();
 
 setInterval(() => {
     check();

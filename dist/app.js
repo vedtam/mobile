@@ -3,14 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const puppeteer_1 = __importDefault(require("puppeteer"));
+const puppeteer_extra_1 = __importDefault(require("puppeteer-extra"));
+const puppeteer_extra_plugin_stealth_1 = __importDefault(require("puppeteer-extra-plugin-stealth"));
 const emailer_js_1 = __importDefault(require("./emailer.js"));
+puppeteer_extra_1.default.use((0, puppeteer_extra_plugin_stealth_1.default)());
 const url = 'https://suchen.mobile.de/fahrzeuge/search.html?damageUnrepaired=NO_DAMAGE_UNREPAIRED&isSearchRequest=true&makeModelVariant1.makeId=1900&makeModelVariant1.modelId=15&minFirstRegistrationDate=2016-01-01&scopeId=C&sfmr=false&sortOption.sortBy=searchNetGrossPrice&sortOption.sortOrder=ASCENDING';
 async function check() {
     try {
-        const browser = await puppeteer_1.default.launch({ headless: true });
+        const browser = await puppeteer_extra_1.default.launch({ headless: true, args: ['--no-sandbox'] });
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
+        // await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36');
         await page.goto(url);
         const hrefElement = await page.$('.mde-consent-accept-btn');
         await (hrefElement === null || hrefElement === void 0 ? void 0 : hrefElement.click());
@@ -23,7 +25,7 @@ async function check() {
         const sorted = prices.sort((a, b) => a - b);
         const date = new Date().toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest' });
         console.log(`Last checked: ${date}`);
-        if (sorted[0] < 22) {
+        if (sorted[0] < 30) {
             console.log('Offer bellow 22.000 found!');
             new emailer_js_1.default().send({
                 from: '"Mobile crawler" <vedtam@gmail.com>',
@@ -49,7 +51,7 @@ async function check() {
 }
 ;
 console.log('Crawler started.');
-// check();
+check();
 setInterval(() => {
     check();
 }, 60000 * 30);
